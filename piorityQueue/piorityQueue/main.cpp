@@ -7,8 +7,6 @@
 template<typename T>
 class PriorityQueue 
 {
-	//jak zrobic zeby bylo to prywatne?
-
 	size_t count = 0;
 public:
     struct Node 
@@ -129,8 +127,29 @@ public:
 			lastCopiedNode = lastCopiedNode ? lastCopiedNode->next.get() : head.get();
 			currentOther = currentOther->next.get();
 		}
-
+		count = other.count;
 		return *this;
+	}
+
+	bool operator==(const PriorityQueue& other) const 
+	{
+
+		if (count != other.count) {
+			return false;
+		}
+
+		Node* current = head.get();
+		Node* currentOther = other.head.get();
+
+		while (current != nullptr && currentOther != nullptr) {
+			if (current->data != currentOther->data) {
+				return false;
+			}
+			current = current->next.get();
+			currentOther = currentOther->next.get();
+		}
+
+		return true;
 	}
 
 	// Helper function to clear the queue
@@ -146,6 +165,40 @@ public:
 	{
 		return count;
 	}
+
+	bool contains(const T& value) const {
+		Node* current = head.get();
+		while (current != nullptr) {
+			if (current->data == value) {
+				return true;
+			}
+			current = current->next.get();
+		}
+		return false;
+	}
+
+	std::string serialize() const {
+		std::stringstream ss;
+		for (auto current = head.get(); current != nullptr; current = current->next.get()) {
+			ss << current->data;
+			if (current->next) {
+				ss << ",";
+			}
+		}
+		return ss.str();
+	}
+
+	static std::unique_ptr<PriorityQueue> deserialize(const std::string& data) {
+		auto queue = std::make_unique<PriorityQueue>();
+		std::stringstream ss(data);
+		T value;
+		while (ss >> value) {
+			queue->push(value);
+			if (ss.peek() == ',') ss.ignore();
+		}
+		return queue;
+	}
+
 };
 
 void tests() {
@@ -201,11 +254,37 @@ void tests() {
 		std::cout << "Caught expected exception: " << e.what() << std::endl;
 	}
 
+	for (int i = 0; i < testSize; i++)
+	{
+		pq.push(rand() % 100);
+	}
+
 	// Test copy operator
 	pq2 = pq;
 	assert(pq2.toString() == pq.toString());
 	std::cout << "Copy operator test" << std::endl;
 
+	std::cout << "Contents of pq: " << pq.toString() << std::endl;
+	std::cout << "Contents of pq2: " << pq2.toString() << std::endl;
+
+	//Test comparison operator
+	assert(pq == pq2);
+	std::cout << "Comparison operator test" << std::endl;
+
+	//Test contains
+	pq.push(5);
+	assert(pq.contains(5));
+	std::cout << "Contains test" << std::endl;
+
+
+	// Test serialization
+	std::string serialized = pq.serialize();
+	std::cout << "Serialization test " << serialized<< std::endl;
+
+	// Test deserialization
+
+	auto pq3 = PriorityQueue<int>::deserialize(serialized);
+	std::cout << "Deserialization test " << pq3->toString() << std::endl;
 
 }
  
